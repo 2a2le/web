@@ -7,6 +7,7 @@ import time
 import requests
 import requests_oauthlib
 import requests.packages.urllib3 as urllib3
+from dateutil import parser as dateutil_parser
 
 # URLs
 SEARCH = 'https://api.twitter.com/1.1/search/tweets.json'
@@ -20,6 +21,11 @@ RESOURCE_OWNER_SECRET = u'IzalISFtV5JLLz7XszaFz8ajUPPZhaGMIoG86aTAuIjEC'
 
 # Max wait between tweet is posted and tweet is searchable
 SEARCH_TIMEOUT = 30
+
+#TODO
+# improve json check by adding fields to below base json
+# containing regexps
+base_json = {}
 
 
 class TestFailedError(AssertionError):
@@ -67,12 +73,17 @@ class TwitterEndpoint():
         """
         Checks the response json.
         """
+        json = json.copy()
+        json.update(base_json)
         def _check_errors(errors):
+            if not self.json.has_key('errors'):
+                raise TestFailedError(
+                        'ERRORS: Expected: present, Actual: not present')
             for error in errors:
                 if error not in self.json['errors']:
                     raise TestFailedError(
                             'ERRORS: Expected: {}, Actual: {}'.format(
-                                json['errors'], self.json['errors']))
+                                errors, self.json['errors']))
         if json.has_key('errors'):
             _check_errors(json.pop('errors'))
         else:
@@ -179,15 +190,25 @@ class TwitterSearchEndpoint(TwitterEndpoint):
                    ' Actual: No status')
         for status in self.json['statuses']:
             for status_key in expected_status.keys():
-                expected = expected_status[status_key]
-                actual = status[status_key] if\
-                            status.has_key(status_key)\
-                            else 'Not present'
-                if not self._check_value(expected, actual):
-                    raise TestFailedError(
-                           'STATUSES FIELD {}: Expected: {},'
-                           ' Actual: {}'.format(status_key, expected,
-                                                actual.encode('utf-8')))
+                if status_key == 'created_before':
+                    created_before = expected_status['created_before']
+                    created_at = status['created_at']
+                    created_at = dateutil_parser.parse(created_at).date()
+                    if created_at > created_before:
+                        raise TestFailedError(
+                               'STATUSES FIELD {}: Expected: Before {},'
+                               ' Actual: {}'.format(created_at, created_before,
+                                                    created_at))
+                else:
+                    expected = expected_status[status_key]
+                    actual = status[status_key] if\
+                                status.has_key(status_key)\
+                                else 'Not present'
+                    if not self._check_value(expected, actual):
+                        raise TestFailedError(
+                               'STATUSES FIELD {}: Expected: {},'
+                               ' Actual: {}'.format(status_key, expected,
+                                                    actual.encode('utf-8')))
 
     def _check_metadata(self, expected_metadata):
         """
