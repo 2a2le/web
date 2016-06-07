@@ -102,6 +102,9 @@ class TwitterEndpoint():
         Sends a request and validates the response.
         """
         self._send_request(params)
+        print "Response:"
+        print self.response
+        print "Response json:"
         print self.response.json()
         return (self._validate_status_code(status_code) and
                 self._validate_json(json))
@@ -126,7 +129,12 @@ class TwitterUpdateEndpoint(TwitterEndpoint):
         self.url = UPDATE
 
     def _send_request(self, params = {}):
-        self.response = requests.post(url=self.url, params=params,
+        # retry if connection error
+        try:
+            self.response = requests.post(url=self.url, params=params,
+                                      auth=self.auth)
+        except ConnectionError:
+            self.response = requests.post(url=self.url, params=params,
                                       auth=self.auth)
         self.json = self.response.json()
 
@@ -173,7 +181,12 @@ class TwitterSearchEndpoint(TwitterEndpoint):
         self.url = SEARCH
 
     def _send_request(self, params = {}):
-        self.response = requests.get(url=self.url, params=params,
+        # retry if connection error
+        try:
+            self.response = requests.get(url=self.url, params=params,
+                                      auth=self.auth)
+        except ConnectionError:
+            self.response = requests.get(url=self.url, params=params,
                                       auth=self.auth)
         self.json = self.response.json()
 
