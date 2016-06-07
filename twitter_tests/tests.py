@@ -52,7 +52,7 @@ class TestUpdateEndpoint(unittest.TestCase):
         search_json = {'status':json}
         self.assertTrue(self.endpoint.check_request(params=params,
                                                     json=json))
-        selassertTrue(self.search_endpoint.check_request(params=search_params,
+        self.assertTrue(self.search_endpoint.check_request(params=search_params,
                                                            json=search_json))
 
     def test_0_1_1_in_reply_to_status_id(self):
