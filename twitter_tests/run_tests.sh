@@ -6,5 +6,5 @@
 
 results_folder=results_$(date +"%m-%d-%Y-%H.%M.%S")
 mkdir $results_folder
-nosetests --processes=2 --process-timeout=900 |& tee $results_folder/nose_output
+nosetests --nologcapture --processes=2 --process-timeout=900 |& tee $results_folder/nose_output
 cp -r $results_folder /results
